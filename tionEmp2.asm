@@ -1,21 +1,34 @@
 %include "io.inc"
 
+section .data
+STRIN times 14 dw 0 ; Initialize 12 bit string
 
 section .text
 global main
 main:
+    mov ebp, esp; for correct debugging
     ;write your code here
-    
-    ; 89 Y
-    ; 78 N
 
 input:
     PRINT_STRING "Input 12-bit code: "
+    GET_STRING [STRIN], 14
+    PRINT_STRING [STRIN]
+    
+    cmp byte[STRIN], 0   ; null
+    je error_null
+    cmp byte[STRIN], 10  ; \n
+    je error_null
+    cmp byte[STRIN], 13  ; return
+    je error_null
     
 
 tapos:
     xor eax, eax
     ret
+
+error_null:
+    PRINT_STRING "Input must not be empty!"
+    jmp continue
 
 error_length:
     PRINT_STRING "Input should be 12 bits in length!"
@@ -27,7 +40,7 @@ error_binary:
 continue:
     NEWLINE
     PRINT_STRING "Do you want to continue (Y/N)?"
-    GET_CHAR 1, DL
+    GET_CHAR DL
     cmp DL, 89      ; Check if yes
     je input
     cmp DL, 78      ; Check if no
