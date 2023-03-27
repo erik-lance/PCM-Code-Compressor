@@ -48,6 +48,53 @@ check_read:
     cmp ECX, 12         ; Check if string is of length 12
     jne error_length
 
+    xor EBX, EBX    ; Pointer
+    xor ECX, ECX    ; Counter
+signal_mapping:
+    ; Skip sign bit
+    inc EBX ; Pointer
+    inc ECX ; Counter
+
+    cmp byte[STRIN+EBX], 49 ; If 1
+    je printing             ; First instance of 1 is the pattern
+    
+    cmp ECX, 8              ; Reached signal 0
+    je printing
+    
+    jmp signal_mapping
+
+printing:
+    PRINT_STRING "Compressed code: "
+    PRINT_CHAR [STRIN]  ; Sign bit
+    
+    mov AL, 8   ; Register for num of signals
+    sub AL, CL  ; Subtract 8 by counter to get signal num
+    
+    mov CH, 7   ; Counter for print_0
+print_0:
+    cmp CH, AL  ; Check signal number if same, stop printing 0
+    je print_1
+    
+    PRINT_CHAR "0"
+print_1:
+    PRINT_CHAR "1"
+    xor EBX, EBX
+    mov BL, CL ; Start from left off
+    inc EBX
+print_remaining:
+    cmp byte[STRIN+EBX], 0   ; null
+    je tapos    
+    cmp byte[STRIN+EBX], 10  ; \n
+    je tapos
+    cmp byte[STRIN+EBX], 13  ; return
+    je tapos
+    
+    mov AH, byte[STRIN+EBX] ; Char to print
+    PRINT_CHAR AH
+    
+    inc EBX ; Pointer
+    jmp print_remaining
+    
 tapos:
     
 
