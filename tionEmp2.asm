@@ -50,6 +50,7 @@ check_read:
 
     xor EBX, EBX    ; Pointer
     xor ECX, ECX    ; Counter
+    
 signal_mapping:
     ; Skip sign bit
     inc EBX ; Pointer
@@ -59,7 +60,7 @@ signal_mapping:
     je pre_printing         ; First instance of 1 is the pattern
     
     cmp ECX, 8              ; Reached signal 0
-    je pre_printing
+    je pre_printing         
     
     jmp signal_mapping
 
@@ -72,21 +73,22 @@ pre_printing:
     
     mov CH, 7   ; Counter for print_0
     
-    jmp binary_printer
+    cmp AL, 0           ; Jumps only if not segment 0
+    jne binary_printer  ; This  will print the first 3 bits after sign
+
+    PRINT_STRING "000"    ; For Signal 0
 
 printing:
-    cmp AL, 0   ; Is segment 0?
+    cmp AL, 0           ; Is segment 0?
+    xor ECX, ECX
     je print_remaining
     
 print_1:
-    PRINT_CHAR "1"
     inc EBX
-    
-    xor ECX, ECX
-    
+
 print_remaining:
-    cmp ECX, 3  ; Printed all remaining
-    je tapos
+    cmp ECX, 4  ; Printed all remaining
+    jge tapos
     
     mov AH, byte[STRIN+EBX] ; Char to print
     PRINT_CHAR AH
@@ -129,9 +131,7 @@ continue:
     jmp continue
 
 binary_printer:
-    mov DH, AL  ; Copy signal num
     mov AH, 4   ; 3rd bit
-    
 bin_loop:
     mov DH, AL  ; Copy signal num
     and DH, AH  ; Check bit
