@@ -27,7 +27,7 @@ error_binary:
 continue:
     NEWLINE
     PRINT_STRING "Do you want to continue (Y/N)?"
-    GET_UDEC 1, DL
+    GET_CHAR 1, DL
     cmp DL, 89      ; Check if yes
     je input
     cmp DL, 78      ; Check if no
