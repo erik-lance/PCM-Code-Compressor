@@ -56,47 +56,50 @@ signal_mapping:
     inc ECX ; Counter
 
     cmp byte[STRIN+EBX], 49 ; If 1
-    je printing             ; First instance of 1 is the pattern
+    je pre_printing         ; First instance of 1 is the pattern
     
     cmp ECX, 8              ; Reached signal 0
-    je printing
+    je pre_printing
     
     jmp signal_mapping
 
-printing:
+pre_printing:
     PRINT_STRING "Compressed code: "
     PRINT_CHAR [STRIN]  ; Sign bit
-    
+
     mov AL, 8   ; Register for num of signals
     sub AL, CL  ; Subtract 8 by counter to get signal num
     
     mov CH, 7   ; Counter for print_0
-print_0:
-    cmp CH, AL  ; Check signal number if same, stop printing 0
-    je print_1
     
-    PRINT_CHAR "0"
+    jmp binary_printer
+
+printing:
+    cmp AL, 0   ; Is segment 0?
+    je print_remaining
+    
 print_1:
     PRINT_CHAR "1"
-    xor EBX, EBX
-    mov BL, CL ; Start from left off
     inc EBX
+    
+    xor ECX, ECX
+    
 print_remaining:
-    cmp byte[STRIN+EBX], 0   ; null
-    je tapos    
-    cmp byte[STRIN+EBX], 10  ; \n
-    je tapos
-    cmp byte[STRIN+EBX], 13  ; return
+    cmp ECX, 3  ; Printed all remaining
     je tapos
     
     mov AH, byte[STRIN+EBX] ; Char to print
     PRINT_CHAR AH
     
     inc EBX ; Pointer
+    inc ECX ; Counter
+    
     jmp print_remaining
     
 tapos:
-    
+    NEWLINE
+    PRINT_STRING "Segment number: "
+    PRINT_UDEC 1, AL
 
 
     xor eax, eax
@@ -125,4 +128,35 @@ continue:
     PRINT_STRING "Error, invalid input"
     jmp continue
 
+binary_printer:
+    mov DH, AL  ; Copy signal num
+    mov AH, 4   ; 3rd bit
     
+bin_loop:
+    mov DH, AL  ; Copy signal num
+    and DH, AH  ; Check bit
+    
+    cmp DH, AH
+    je bin_print
+    
+    PRINT_CHAR "0"  ; Since AND operation failed
+    
+    cmp AH, 0   ; Finished printing first 4 bits
+    je printing
+    
+    dec AH  ; Subtract 2
+    dec AH
+    
+    jmp bin_loop
+    
+bin_print:
+    
+    PRINT_CHAR "1"  ; Since AND operation succeeded
+    
+    cmp AH, 0   ; Finished printing first 4 bits
+    je printing
+    
+    dec AH  ; Subtract 2
+    dec AH
+    
+    jmp bin_loop
