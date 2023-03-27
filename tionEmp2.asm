@@ -79,8 +79,8 @@ pre_printing:
     PRINT_STRING "000"    ; For Signal 0
 
 printing:
-    cmp AL, 0           ; Is segment 0?
     xor ECX, ECX
+    cmp AL, 0           ; Is segment 0?
     je print_remaining
     
 print_1:
