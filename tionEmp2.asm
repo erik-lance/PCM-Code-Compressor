@@ -202,7 +202,7 @@ bin_print:
 buffer_cleaner:
     PRINT_STRING "Error: Input should be 12 bits in length!"
     NEWLINE
-buffer_cleaner_loop:
+buffer_cleaner_loop: ; Gets a character beyond the string size looping through until \n
     GET_CHAR DL    ; retrive character to clean
     cmp DL, 10
     jne buffer_cleaner_loop ; if not \n, loop
