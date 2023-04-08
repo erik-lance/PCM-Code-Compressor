@@ -1,7 +1,8 @@
 %include "io.inc"
 
 section .data
-STRIN times 13 dw 0 ; Initialize 12 bit string
+STRIN times 14 db 0 ; Initialize 12 bit string (1 for invalid and 1 for terminate)
+looped dd 0 ; For buffer
 
 section .text
 global main
@@ -9,11 +10,9 @@ main:
     mov ebp, esp; for correct debugging
     ;write your code here
 input:
+    mov byte[STRIN], 0
     PRINT_STRING "Input 12-bit code: "
-    GET_STRING [STRIN], 32
-    PRINT_STRING [STRIN]
-    
-    NEWLINE
+    GET_STRING [STRIN], 14
     
     cmp byte[STRIN], 0   ; null
     je error_null
@@ -22,14 +21,17 @@ input:
     cmp byte[STRIN], 13  ; return
     je error_null
 
+    
     xor EBX, EBX    ; Pointer
     xor ECX, ECX    ; Counter Length
+    jmp read
+     
 read:    
     cmp byte[STRIN+EBX], 48 ; If 0
     je continue_read
     
     cmp byte[STRIN+EBX], 49 ; If 1
-    jne error_binary
+    jne read_error
 
 continue_read:
     inc EBX ; Pointer
@@ -44,9 +46,33 @@ continue_read:
     
     jmp read
 
+read_error:
+    PRINT_STRING "Error: Input should be 1's and 0's only!"
+    NEWLINE
+failed_read:    ; This continues reading and no longer checks for 1/0
+    inc EBX ; Pointer
+    inc ECX ; Counter
+
+    cmp byte[STRIN+EBX], 0   ; null
+    je failed_check_read    
+    cmp byte[STRIN+EBX], 10  ; \n
+    je failed_check_read
+    cmp byte[STRIN+EBX], 13  ; return
+    je failed_check_read
+    
+    jmp failed_read
+
+failed_check_read:
+    cmp ECX, 12         ; Check if string is of length 12
+    jl error_length
+    jg buffer_cleaner
+
+    jmp continue
+
 check_read:
     cmp ECX, 12         ; Check if string is of length 12
-    jne error_length
+    jl error_length
+    jg buffer_cleaner
 
     xor EBX, EBX    ; Pointer
     xor ECX, ECX    ; Counter
@@ -102,33 +128,45 @@ tapos:
     NEWLINE
     PRINT_STRING "Segment number: "
     PRINT_UDEC 1, AL
+    NEWLINE
+    
+    jmp continue
 
-
+true_tapos:
     xor eax, eax
     ret
 
 error_null:
+    NEWLINE
     PRINT_STRING "Input must not be empty!"
     jmp continue
 
 error_length:
-    PRINT_STRING "Input should be 12 bits in length!"
-    jmp continue
-
-error_binary:
-    PRINT_STRING "Input should be 1's and 0's only!"
-
-continue:
+    PRINT_STRING "Error: Input should be 12 bits in length!"
     NEWLINE
-    PRINT_STRING "Do you want to continue (Y/N)?"
+continue:
+    PRINT_STRING "Do you want to continue (Y/N)? "
     GET_CHAR DL
+    NEWLINE
+    
+    cmp dword[looped], 0
+    jne continue_looped
+    
+    GET_CHAR AL ; Retrieve \n
+    xor EAX, EAX
+    inc EAX
+    mov dword[looped], EAX
+    
     cmp DL, 89      ; Check if yes
     je input
-    cmp DL, 78      ; Check if no
-    je tapos
     
-    PRINT_STRING "Error, invalid input"
-    jmp continue
+    jmp true_tapos  ; Anyhting but yes
+continue_looped:
+    GET_CHAR AL
+    cmp DL, 89      ; Check if yes
+    je input
+    
+    jmp true_tapos  ; Anyhting but yes
 
 binary_printer:
     mov AH, 4   ; 3rd bit
@@ -160,3 +198,14 @@ bin_print:
     dec AH
     
     jmp bin_loop
+
+buffer_cleaner:
+    PRINT_STRING "Error: Input should be 12 bits in length!"
+    NEWLINE
+buffer_cleaner_loop:
+    GET_CHAR DL    ; retrive character to clean
+    cmp DL, 10
+    jne buffer_cleaner_loop ; if not \n, loop
+    
+    jmp continue
+
