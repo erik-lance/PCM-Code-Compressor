@@ -1,3 +1,4 @@
+; Erik Lance L. Tiongquico - S14
 %include "io.inc"
 
 section .data
